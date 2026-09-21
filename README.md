@@ -1,6 +1,6 @@
 # go-xmlrpc
 
-Go library for XML-RPC values, requests, responses, HTTP clients, and HTTP servers.
+Go library for XML-RPC values, requests, responses, HTTP clients, and HTTP servers built on Go's standard `net/http` package.
 
 ## Client
 
@@ -37,6 +37,26 @@ go run ./cmd/client -endpoint http://127.0.0.1:3000/RPC2
 ```
 
 The Ruby client is an interoperability example. It uses the same endpoint and needs the gems in `Gemfile`.
+
+## Server
+
+`Server` implements `http.Handler`, so you can use it with `net/http` directly:
+
+```go
+server := xmlrpc.NewServer()
+service := xmlrpc.NewService("Test")
+
+if err := service.Register("echo", test.Echo); err != nil {
+    log.Fatal(err)
+}
+
+server.Register(service)
+
+http.Handle("/RPC2", server)
+log.Fatal(http.ListenAndServe(":3000", nil))
+```
+
+You can register the server on any route and combine it with `http.ServeMux` or other HTTP middleware.
 
 ## Server methods
 
