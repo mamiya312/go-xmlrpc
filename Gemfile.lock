@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    rexml (3.2.5)
+    webrick (1.8.1)
+    xmlrpc (0.3.2)
+      webrick
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  rexml (~> 3.2)
+  xmlrpc
+
+BUNDLED WITH
+   2.3.26
