@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// XMLRPCRequest represents an XML-RPC method call.
 type XMLRPCRequest struct {
 	Name   xml.Name         `xml:"methodCall"`
 	Method string           `xml:"methodName"`
@@ -19,25 +20,30 @@ type XMLRPCRequest struct {
 	Fault  XMLRPCErrorValue `xml:"fault,omitempty"`
 }
 
+// XMLRPCResponse represents an XML-RPC method response.
 type XMLRPCResponse struct {
 	Name   xml.Name         `xml:"methodResponse"`
 	Params []XMLRPCParam    `xml:"params>param"`
 	Fault  XMLRPCErrorValue `xml:"fault,omitempty"`
 }
 
+// XMLRPCParam represents one XML-RPC parameter.
 type XMLRPCParam struct {
 	Value string `xml:",innerxml"`
 }
 
+// XMLRPCErrorValue represents the value inside an XML-RPC fault.
 type XMLRPCErrorValue struct {
 	Value XMLRPCValue `xml:"value"`
 }
 
+// XMLRPCValueStructMember represents one member of an XML-RPC struct.
 type XMLRPCValueStructMember struct {
 	Name  string      `xml:"name"`
 	Value XMLRPCValue `xml:"value"`
 }
 
+// XMLRPCValue represents a decoded XML-RPC value.
 type XMLRPCValue struct {
 	Array    []XMLRPCValue             `xml:"array>data>value"`
 	Struct   []XMLRPCValueStructMember `xml:"struct>member"`
@@ -52,6 +58,7 @@ type XMLRPCValue struct {
 	Raw      string                    `xml:",innerxml"`
 }
 
+// IsNull reports whether the value is XML-RPC nil.
 func (c *XMLRPCValue) IsNull() bool {
 	return strings.TrimSpace(c.Raw) == "<nil/>"
 }
@@ -142,6 +149,7 @@ func (c *XMLRPCValue) scanAsInt(field *reflect.Value) error {
 	return err
 }
 
+// Scan decodes the value into a settable reflection value.
 func (c *XMLRPCValue) Scan(field *reflect.Value) error {
 	if field == nil || !field.IsValid() || !field.CanSet() {
 		return ErrorInternalError
@@ -289,10 +297,12 @@ func (c *XMLRPCValue) ScanValue(field reflect.Value) error {
 	return err
 }
 
+// RequestReader reads and decodes an XML-RPC method call.
 type RequestReader struct {
 	xmlrpcRequest XMLRPCRequest
 }
 
+// NewRequestReader parses an XML-RPC method call from r.
 func NewRequestReader(r io.Reader) (*RequestReader, error) {
 	var xmlrpcRequest XMLRPCRequest
 	decoder := xml.NewDecoder(r)
@@ -318,9 +328,13 @@ func NewRequestReader(r io.Reader) (*RequestReader, error) {
 	}
 	return &RequestReader{xmlrpcRequest: xmlrpcRequest}, nil
 }
+
+// Method returns the requested XML-RPC method name.
 func (c *RequestReader) Method() (string, error) {
 	return c.xmlrpcRequest.Method, nil
 }
+
+// DecodeArgs decodes request parameters into individual pointers.
 func (c *RequestReader) DecodeArgs(v ...interface{}) error {
 	if len(v) != len(c.xmlrpcRequest.Params) {
 		return ErrorInvalidParams
@@ -344,6 +358,7 @@ func (c *RequestReader) DecodeArgs(v ...interface{}) error {
 	return nil
 }
 
+// Decode decodes request parameters into the fields of a struct pointer.
 func (c *RequestReader) Decode(args interface{}) error {
 	argsValue := reflect.ValueOf(args)
 	if !argsValue.IsValid() || argsValue.Kind() != reflect.Pointer || argsValue.IsNil() ||
@@ -369,10 +384,12 @@ func (c *RequestReader) Decode(args interface{}) error {
 	return nil
 }
 
+// ResponseReader reads and decodes an XML-RPC method response.
 type ResponseReader struct {
 	xmlrpcResponse XMLRPCResponse
 }
 
+// NewResponseReader parses an XML-RPC method response from r.
 func NewResponseReader(r io.Reader) (*ResponseReader, error) {
 	var xmlrpcResponse XMLRPCResponse
 	decoder := xml.NewDecoder(r)
@@ -399,6 +416,7 @@ func NewResponseReader(r io.Reader) (*ResponseReader, error) {
 	return &ResponseReader{xmlrpcResponse: xmlrpcResponse}, nil
 }
 
+// Decode decodes response parameters into individual pointers.
 func (c *ResponseReader) Decode(v ...any) error {
 	if len(v) != len(c.xmlrpcResponse.Params) {
 		return ErrorInvalidParams
@@ -425,6 +443,7 @@ func (c *ResponseReader) Decode(v ...any) error {
 	return nil
 }
 
+// ToRequestXML encodes an XML-RPC method call.
 func ToRequestXML(method string, values ...interface{}) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("<methodCall><methodName>")
@@ -445,6 +464,7 @@ func ToRequestXML(method string, values ...interface{}) (string, error) {
 	return sb.String(), nil
 }
 
+// ToResponseXML encodes an XML-RPC method response.
 func ToResponseXML(values ...interface{}) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("<?xml version=\"1.0\" ?><methodResponse><params>")
@@ -461,6 +481,7 @@ func ToResponseXML(values ...interface{}) (string, error) {
 	return sb.String(), nil
 }
 
+// ToResponseErrorXML encodes an XML-RPC fault response.
 func ToResponseErrorXML(v Error) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("<?xml version=\"1.0\" ?><methodResponse><fault>")
@@ -473,6 +494,7 @@ func ToResponseErrorXML(v Error) (string, error) {
 	return sb.String(), nil
 }
 
+// ToXML encodes a Go value as an XML-RPC value.
 func ToXML(value interface{}) (string, error) {
 	if value == nil {
 		return "<value><nil/></value>", nil
