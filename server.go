@@ -19,6 +19,7 @@ type Service struct {
 	methods map[string]*method
 }
 
+// NewService creates a named XML-RPC service.
 func NewService(name string) *Service {
 	return &Service{
 		name:    name,
@@ -26,6 +27,10 @@ func NewService(name string) *Service {
 	}
 }
 
+// Register adds a method to the service.
+//
+// The function must have the signature
+// func(*http.Request, *Args, *Replies) error.
 func (s *Service) Register(name string, function any) error {
 	fvalue := reflect.ValueOf(function)
 	if !fvalue.IsValid() {
@@ -74,6 +79,7 @@ type Logger interface {
 	Printf(format string, v ...any)
 }
 
+// NewServer creates an XML-RPC HTTP server.
 func NewServer() *Server {
 	return &Server{
 		services: map[string]*Service{},
@@ -81,6 +87,7 @@ func NewServer() *Server {
 	}
 }
 
+// Register adds a service to the server.
 func (c *Server) Register(service *Service) {
 	c.services[service.name] = service
 }
@@ -105,6 +112,7 @@ func (s *Server) writeFault(w http.ResponseWriter, fault Error) {
 	}
 }
 
+// ServeHTTP handles XML-RPC requests as an http.Handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		s.logf("%d %s", http.StatusMethodNotAllowed, "MethodNotAllowed")
