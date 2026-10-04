@@ -1,3 +1,3 @@
 module github.com/mamiya312/go-xmlrpc
 
-go 1.27
+go 1.18
