@@ -157,7 +157,7 @@ func (c *XMLRPCValue) Scan(field *reflect.Value) error {
 
 	if field.Kind() == reflect.Pointer {
 		if c.IsNull() {
-			field.SetZero()
+			field.Set(reflect.Zero(field.Type()))
 			return nil
 		}
 		if field.IsNil() {
